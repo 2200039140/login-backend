@@ -11,7 +11,7 @@ app.use(cors());
 require("dotenv").config()
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(process.env.MONGO_URI||"mongodb://mongo:gKvOnETLuIZADKQhPJsuvyXxNPDQMsYd@interchange.proxy.rlwy.net:22933", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
