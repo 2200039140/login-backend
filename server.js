@@ -14,9 +14,10 @@ mongoose
   .connect(process.env.MONGO_URI||"mongodb://mongo:gKvOnETLuIZADKQhPJsuvyXxNPDQMsYd@interchange.proxy.rlwy.net:22933", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+  }).then(() => {
+    console.log("✅ MongoDB Connected(vercel/railway)");
+    console.log(" Using DB URI:", process.env.MONGO_URI || "default hardcoded one");
   })
-  .then(() => console.log("✅ MongoDB Connected(vercel)"))
-console.log("👉 Using DB URI:", process.env.MONGO_URI || "default hardcoded one");
 
 
 
