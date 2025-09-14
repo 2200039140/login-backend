@@ -4,24 +4,36 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
-require("dotenv").config()
-// MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI||"mongodb://mongo:gKvOnETLuIZADKQhPJsuvyXxNPDQMsYd@interchange.proxy.rlwy.net:22933", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }).then(() => {
-    console.log("✅ MongoDB Connected(vercel/railway)");
-    console.log(" Using DB URI:", process.env.MONGO_URI || "default hardcoded one");
+
+// ✅ CORS setup (Vercel frontend + localhost dev)
+app.use(
+  cors({
+    origin: [
+      "https://login-frontend-sage.vercel.app", // Vercel frontend
+      "http://localhost:3000"                   // Local dev
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
   })
+);
 
+// ✅ MongoDB Connection
+mongoose
+  .connect(
+    process.env.MONGO_URI ||
+      "mongodb://mongo:gKvOnETLuIZADKQhPJsuvyXxNPDQMsYd@interchange.proxy.rlwy.net:22933"
+  )
+  .then(() => {
+    console.log("✅ MongoDB Connected (vercel/railway)");
+    console.log("👉 Using DB URI:", process.env.MONGO_URI || "hardcoded fallback URI");
+  })
+  .catch((err) => console.error("❌ DB Error:", err));
 
-
-// User Schema
+// ✅ User Schema
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
@@ -32,18 +44,19 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User123", userSchema);
 
-// Middleware: verify token
+// ✅ Middleware: verify token
 function authMiddleware(req, res, next) {
   const token = req.headers["authorization"];
   if (!token) return res.status(403).json({ error: "No token provided" });
-  jwt.verify(token, "secret123", (err, decoded) => {
+
+  jwt.verify(token, process.env.JWT_SECRET || "secret123", (err, decoded) => {
     if (err) return res.status(401).json({ error: "Invalid token" });
     req.user = decoded;
     next();
   });
 }
 
-// Signup
+// ✅ Signup
 app.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role, course, grade } = req.body;
@@ -56,7 +69,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// Login
+// ✅ Login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
@@ -65,11 +78,16 @@ app.post("/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = jwt.sign({ id: user._id, role: user.role }, "secret123", { expiresIn: "1h" });
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET || "secret123",
+    { expiresIn: "1h" }
+  );
+
   res.json({ token, role: user.role, name: user.name });
 });
 
-// Get Profile
+// ✅ Get Profile
 app.get("/profile", authMiddleware, async (req, res) => {
   if (req.user.role === "admin") {
     const users = await User.find({}, "-password"); // hide password
@@ -80,6 +98,6 @@ app.get("/profile", authMiddleware, async (req, res) => {
   }
 });
 
-// Start Server
-const PORT = process.env.PORT || 5000; // ✅ Railway will override PORT
+// ✅ Start Server
+const PORT = process.env.PORT || 5000; // Railway will override with its own port
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
