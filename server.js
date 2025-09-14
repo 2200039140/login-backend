@@ -17,7 +17,7 @@ mongoose
   })
   .then(() => console.log("✅ MongoDB Connected(vercel)"))
 console.log("👉 Using DB URI:", process.env.MONGO_URI || "default hardcoded one");
-  .catch((err) => console.error("❌ DB Error:", err));
+
 
 
 // User Schema
